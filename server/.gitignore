@@ -29,3 +29,6 @@ venv
 build
 
 __pycache__
+
+#Database
+*.sqlite3
