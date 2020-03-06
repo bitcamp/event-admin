@@ -15,6 +15,12 @@ class User(db.Model):
     token = db.Column(db.Text, nullable=False)
     email = db.Column(db.Text, nullable=False)
 
+class Announcement(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.Text, nullable=False)
+    text = db.Column(db.Text, nullable=True)
+    time = db.Column(db.Integer, nullable=False)
+
 @app.route('/')
 def hello_world():
     return 'Hello, World!'
@@ -40,21 +46,39 @@ def post_events_favorite():
 
 # Takes an event ID and an access token, unfavorites an event
 @app.route('/events/unfavorite', methods=['POST'])
-def post_events_favorite():
+def post_events_unfavorite():
     return jsonify([])
 
 # Gets a count of all favorites
 @app.route('/events/favorite_count')
-def post_events_favorite():
+def get_events_favorite_count():
     return jsonify([])
 
 # Given an access token,
 @app.route('/events/my_favorites')
-def post_events_favorite():
+def get_events_favorite():
+    return jsonify([])
+
+#### Announcement endpoints
+
+@app.route('/announcements')
+def get_announcements():
+    return jsonify(Announcement.query.all())
+
+@app.route('/announcements/create', methods=['POST'])
+def post_announcement_create():
+    return jsonify([])
+
+@app.route('/announcements/:id/update', methods=['PATCH'])
+def post_announcement_update():
+    return jsonify([])
+
+@app.route('/announcements/:id/delete', methods=['DELETE'])
+def post_announcement_delete():
     return jsonify([])
 
 # Get token and email
-@app.route('/notifications/subscribe', methods=['POST'])
+@app.route('/announcements/subscribe', methods=['POST'])
 def postToken():
     data = request.get_json()
     token = data['token']
@@ -72,3 +96,7 @@ def getAllTokens():
 
 def getToken(email):
     return User.query.filter_by(email=email).first().token
+
+if __name__ == '__main__':
+    db.create_all()
+    app.run()
