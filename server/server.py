@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 import json
 import hashlib
+import datetime
 
 app = Flask(__name__)
 
@@ -20,6 +21,9 @@ class Announcement(db.Model):
     title = db.Column(db.Text, nullable=False)
     text = db.Column(db.Text, nullable=True)
     time = db.Column(db.Integer, nullable=False)
+
+    def as_dict(self):
+        return {'id': self.id, 'title': self.title, 'text': self.text, 'time': self.time}
 
 @app.route('/')
 def hello_world():
@@ -63,19 +67,43 @@ def get_events_favorite():
 
 @app.route('/announcements')
 def get_announcements():
-    return jsonify(Announcement.query.all())
+    ans = []
+    for an in Announcement.query.all():
+        ans.append(an.as_dict())
+    return jsonify(ans)
 
 @app.route('/announcements/create', methods=['POST'])
 def post_announcement_create():
-    return jsonify([])
+    data = request.get_json()
+    title = data['title']
+    text = data['text']
+    time = datetime.datetime.now()
+    announcement = Announcement(title=title, text=text, time=time)
+    db.session.add(announcement)
+    db.session.commit()
+    return jsonify({'title': title})
 
-@app.route('/announcements/:id/update', methods=['PATCH'])
-def post_announcement_update():
-    return jsonify([])
+@app.route('/announcements/<id>/update', methods=['PATCH'])
+def post_announcement_update(id):
+    data = request.get_json()
+    request_id = data['id']
+    ann = db.session.query(Announcement).get(request_id)
+    print(ann)
+    if 'title' in data:
+        ann.title = data['title']
+    if 'text' in data:
+        ann.text = data['text']
+    ann.time = datetime.datetime.now()
+    db.session.commit()
+    return jsonify(ann.as_dict())
 
-@app.route('/announcements/:id/delete', methods=['DELETE'])
-def post_announcement_delete():
-    return jsonify([])
+@app.route('/announcements/<id>/delete', methods=['DELETE'])
+def post_announcement_delete(id):
+    data = request.get_json()
+    request_id = data['id']
+    db.session.query(Announcement).filter(Announcement.id==request_id).delete()
+    db.session.commit()
+    return jsonify({'id': request_id})
 
 # Get token and email
 @app.route('/announcements/subscribe', methods=['POST'])
