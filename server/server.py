@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 import json
 import hashlib
+import requests
 
 app = Flask(__name__)
 
@@ -27,6 +28,17 @@ def hello_world():
 
 def get_events():
     return []
+
+@app.route('/login', methods=['POST'])
+def login():
+    r = requests.post(url="https://my.bit.camp/api/auth/sign_in", data=request.json)
+    return (r.content.data, r.status_code, {"uid": r.headers['uid'], "access-token": r.headers['access-token'], "client": r.headers['client'], "Content-Type": "application/json"})
+
+@app.route('/login/scanner', methods=['POST'])
+def login_scanner():
+    r = requests.post(url="https://my.bit.camp/api/auth/sign_in", data=request.json)
+    return (r.content, r.status_code, {"uid": r.headers['uid'], "access-token": r.headers['access-token'], "client": r.headers['client'], "Content-Type": "application/json"})
+
 
 # Returns JSON with events.
 # Mirrors https://my.bit.camp/events.json
