@@ -1,0 +1,402 @@
+openapi: 3.0.1
+info:
+  title: Bitcamp Backend
+  description: >-
+    The backend for the Bitcamp's app, live site, etc.
+    
+    Supplements Dashboard.
+  contact:
+    email: tech@bit.camp
+  license:
+    name: MIT
+  version: 1.0.0
+servers:
+- url: https://api.bit.camp
+tags:
+- name: login
+  description: User Auth
+- name: announce
+  description: Announcements and Notifications
+- name: entry
+  description: Checking in to Bitcamp
+- name: events
+  description: Events within Bitcamp.
+- name: mentorship
+  description: Mentorship server
+paths:
+  /login:
+    post:
+      tags:
+      - login
+      summary: Log in as a hacker or organizer
+      description: Auths a user with the backend for the main app.
+      operationId: hackerLogin
+      requestBody:
+        description: "User credentials"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginBody'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserData'
+        400:
+          description: Invalid login
+          content: {}
+  /login/admin:
+    post:
+      tags:
+      - login
+      summary: Log in as an organizer
+      description: Like /login, but with a server-side check that the person is at least an organizer.
+      operationId: adminLogin
+      requestBody:
+        description: "User credentials"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginBody'
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserData'
+        400:
+          description: Invalid login
+          content: {}
+  /announce:
+    get:
+      tags:
+        - announce
+      summary: Gets a list of announcements
+      description: Gets a list of all announcements
+      operationId: listAnnouncements
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Announcement'
+    post:
+      tags:
+        - announce
+      summary: Create an announcement
+      operationId: createAnnounce
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        description: "Announcement"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                body:
+                  type: string
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+        400:
+          description: Invalid body
+          content: {}
+    put:
+      tags:
+        - announce
+      summary: Update an announcement
+      operationId: updateAnnouncement
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: 'query'
+          name: id
+          schema:
+            type: integer
+      requestBody:
+        description: "Announcement"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                body:
+                  type: string
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+        400:
+          description: Invalid body
+          content: {}
+  /announce/subscribe:
+    post:
+      tags:
+      - announce
+      summary: Subscribes to push notifications with an expo token.
+      description: Accepts a user's expo token, and sends announcements to them
+      operationId: notifySubscribe
+      requestBody:
+        description: "User credentials"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                user_id:
+                  type: integer
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+        400:
+          description: Invalid body
+          content: {}
+  /entry/checkin:
+    post:
+      tags:
+      - entry
+      summary: Checks a user in to Bitcamp
+      description: Accepts a hacker's email, marks them as checked in, and returns their info
+      operationId: entryCheckin
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        description: "Email"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserData'
+        400:
+          description: Invalid body
+          content: {}
+  /entry/nfc-pair:
+    post:
+      tags:
+        - entry
+      summary: Associates a NFC id with a user
+      description: Associates a NFC id with a user
+      operationId: entryPairing
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        description: "User id, nfc data"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: user id
+                nfc:
+                  type: string
+                  description: data from NFC band
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+        400:
+          description: Invalid body
+          content: {}
+  /events:
+    get:
+      tags:
+        - events
+      summary: List events
+      description: List of all events
+      operationId: listEvents
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+  /events/hash:
+    get:
+      tags:
+        - events
+      summary: Get hashed list of events
+      description: Hashed list of events, so app knows when to update
+      operationId: hashEvents
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+  /events/favorite:
+    post:
+      tags:
+        - events
+      summary: Favorites an event
+      description: Allows user to get notified.
+      operationId: favoriteEvent
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+  /events/unfavorite:
+    post:
+      tags:
+        - events
+      summary: Unfavorites an event
+      description: Removes user from being notified
+      operationId: unfavoriteEvent
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+  /events/favorites:
+    get:
+      tags:
+        - events
+      summary: List how many people favorited each event
+      description: List of all ids and how many people favorited each
+      operationId: listFavoriteCounts
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+  /events/my_favorites:
+    get:
+      tags:
+        - events
+      summary: List a user's favorited events
+      description: List of all events favorited by a user
+      operationId: listUserFavorites
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+  /events/checkin:
+    post:
+      tags:
+      - events
+      summary: Checks a user in to an event
+      description: Accepts a hacker's email, marks them as checked in, and returns their info
+      operationId: eventCheckin
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        description: "Email or NFC"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserData'
+        400:
+          description: Invalid body
+          content: {}
+  /mentorship:
+    get:
+      tags:
+        - mentorship
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+  /mentorship/submit:
+    post:
+      tags:
+        - mentorship
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+components:
+  schemas:
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    UserData:
+      type: object
+      properties:
+        user_id:
+          type: number
+    Announcement:
+      type: object
+      properties:
+        id: 
+          type: number
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+
