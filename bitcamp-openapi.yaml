@@ -478,6 +478,17 @@ components:
           type: array
           items:
             type: string
+    Question:
+      type: object
+      properties:
+        id:
+          type: integer
+        question:
+          title: string
+        asker:
+          type: integer
+        location:
+          type: string
   securitySchemes:
     HackerToken:
       type: apiKey
