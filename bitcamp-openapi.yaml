@@ -388,6 +388,8 @@ paths:
     get:
       tags:
         - mentorship
+      description: List questions
+      summary: List questions
       responses:
         200:
           description: successful operation
@@ -401,6 +403,23 @@ paths:
     post:
       tags:
         - mentorship
+      description: Submit question
+      summary: Submit question
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+  /mentorship/claim:
+    post:
+      tags:
+        - mentorship
+      description: Claim question
+      summary: Claim question
+      security:
+        - ApiKeyAuth: []
       responses:
         200:
           description: successful operation
@@ -489,6 +508,8 @@ components:
           type: integer
         location:
           type: string
+        claimed:
+          type: boolean
   securitySchemes:
     HackerToken:
       type: apiKey
