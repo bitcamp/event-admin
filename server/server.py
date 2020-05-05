@@ -134,6 +134,11 @@ def post_question():
 def claim_question():
     return jsonify([])
 
+## Teams
+@app.route('/teams')
+def get_questions():
+    return jsonify([])
+
 ## Get token and email
 #@app.route('/announcements/subscribe', methods=['POST'])
 #def postToken():
