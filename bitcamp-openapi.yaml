@@ -392,8 +392,10 @@ paths:
     get:
       tags:
         - questions
-      description: List questions
-      summary: List questions
+      description: List all of a user's questions
+      summary: List all of a user's questions
+      security:
+        - HackerToken: []
       responses:
         200:
           description: successful operation
@@ -415,20 +417,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                askerId:
-                  type: integer
+              $ref: "#/components/schemas/BaseQuestion"
       responses:
         200:
           description: successful operation
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  questionId:
-                    type: integer
+                $ref: "#/components/schemas/Question"
         400:
           description: invalid credentials
   /questions/delete:
@@ -444,14 +440,6 @@ paths:
           name: questionId
           schema:
             type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                askerId:
-                  type: integer
       responses:
         204:
           description: The resource was deleted successfully.
@@ -465,12 +453,8 @@ paths:
       security:
         - ApiKeyAuth: []
       responses:
-        200:
+        204:
           description: successful operation
-          content:
-            application/json:
-              schema:
-                type: string
   /teams:
     get:
       tags:
@@ -523,11 +507,10 @@ components:
         userType:
           type: string
           enum:
-            - admin
+            - attendee
+            - mentor
             - organizer
-            - sponsor
-            - hacker
-            - minor
+            - admin
         rsvp:
           type: string
         checkIn:
@@ -582,24 +565,32 @@ components:
           format: date-time
         pointVal:
           type: string
-    Question:
+    BaseQuestion:
       type: object
       properties:
-        id:
-          type: integer
         question:
           type: string
-        askerId:
-          type: integer
         slackUsername:
           type: string
         location:
           type: string
-        claimed:
-          type: boolean
-        claimerName:
-          type: string
-          nullable: true
+    Question:
+      allOf:
+        - $ref: "#/components/schemas/BaseQuestion"
+        - type: object
+          properties:
+            id:
+              type: integer
+            askerId:
+              type: integer
+            claimed:
+              type: boolean
+            claimerName:
+              type: string
+              nullable: true
+            timestamp:
+              type: string
+              format: datetime
   securitySchemes:
     HackerToken:
       type: apiKey
