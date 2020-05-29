@@ -411,11 +411,6 @@ paths:
       summary: Submit question
       security:
         - HackerToken: []
-      parameters:
-        - in: "query"
-          name: questionId
-          schema:
-            type: integer
       requestBody:
         content:
           application/json:
@@ -425,8 +420,17 @@ paths:
                 askerId:
                   type: integer
       responses:
-        204:
+        200:
           description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  questionId:
+                    type: integer
+        400:
+          description: invalid credentials
   /questions/delete:
     delete:
       tags:
@@ -451,6 +455,8 @@ paths:
       responses:
         204:
           description: The resource was deleted successfully.
+        400:
+          description: invalid credentials
     post:
       tags:
         - questions
