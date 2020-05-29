@@ -21,8 +21,8 @@ tags:
     description: Checking in to Bitcamp
   - name: events
     description: Events within Bitcamp.
-  - name: mentorship
-    description: Mentorship server
+  - name: questions
+    description: Questions server
   - name: teams
     description: Team endpoints
 paths:
@@ -388,10 +388,10 @@ paths:
         400:
           description: Invalid body
           content: {}
-  /mentorship:
+  /question:
     get:
       tags:
-        - mentorship
+        - questions
       description: List questions
       summary: List questions
       responses:
@@ -403,23 +403,57 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Question"
-  /mentorship/submit:
+  /questions/submit:
     post:
       tags:
-        - mentorship
+        - questions
       description: Submit question
       summary: Submit question
+      security:
+        - HackerToken: []
+      parameters:
+        - in: "query"
+          name: questionId
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                askerId:
+                  type: integer
       responses:
-        200:
+        204:
           description: successful operation
-          content:
-            application/json:
-              schema:
-                type: string
-  /mentorship/claim:
+  /questions/delete:
+    delete:
+      tags:
+        - questions
+      description: Detelete a question (only the original asker can delete a question)
+      summary: Deletes a question
+      security:
+        - HackerToken: []
+      parameters:
+        - in: "query"
+          name: questionId
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                askerId:
+                  type: integer
+      responses:
+        204:
+          description: The resource was deleted successfully.
     post:
       tags:
-        - mentorship
+        - questions
       description: Claim question
       summary: Claim question
       security:
@@ -557,6 +591,9 @@ components:
           type: string
         claimed:
           type: boolean
+        claimerName:
+          type: string
+          nullable: true
   securitySchemes:
     HackerToken:
       type: apiKey
