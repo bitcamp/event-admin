@@ -448,11 +448,17 @@ paths:
                   type: object
                   properties:
                     color:
-                      type: string
+                      $ref: "#/component/schemas/Team"
                     points:
                       type: integer
 components:
   schemas:
+    Team:
+      type: string
+      enum:
+        - "red"
+        - "green"
+        - "blue"
     LoginBody:
       type: object
       properties:
@@ -487,7 +493,7 @@ components:
         checkIn:
           type: string
         team:
-          type: string
+          $ref: "#/components/schemas/Team"
         foodRestrictions:
           type: boolean
         foodRestrictionsInfo:
