@@ -21,8 +21,8 @@ tags:
     description: Checking in to Bitcamp
   - name: events
     description: Events within Bitcamp.
-  - name: mentorship
-    description: Mentorship server
+  - name: questions
+    description: Questions server
   - name: teams
     description: Team endpoints
 paths:
@@ -104,7 +104,7 @@ paths:
       summary: Create an announcement
       operationId: createAnnounce
       security:
-        - ApiKeyAuth: []
+        - AdminToken: []
       requestBody:
         description: "Announcement"
         content:
@@ -132,7 +132,7 @@ paths:
       summary: Update an announcement
       operationId: updateAnnouncement
       security:
-        - ApiKeyAuth: []
+        - AdminToken: []
       parameters:
         - in: "query"
           name: id
@@ -165,7 +165,7 @@ paths:
       summary: Delete an announcement
       operationId: deleteAnnouncement
       security:
-        - ApiKeyAuth: []
+        - AdminToken: []
       parameters:
         - in: "query"
           name: id
@@ -186,6 +186,7 @@ paths:
       operationId: notifySubscribe
       security:
         - HackerToken: []
+        - AdminToken: []
       requestBody:
         description: "User credentials"
         content:
@@ -209,7 +210,7 @@ paths:
       description: Accepts a hacker's email, marks them as checked in, and returns their info
       operationId: entryCheckin
       security:
-        - ApiKeyAuth: []
+        - AdminToken: []
       requestBody:
         description: "Email"
         content:
@@ -219,6 +220,7 @@ paths:
               properties:
                 email:
                   type: string
+                  format: email
       responses:
         200:
           description: successful operation
@@ -237,7 +239,7 @@ paths:
       description: Associates a NFC id with a user
       operationId: entryPairing
       security:
-        - ApiKeyAuth: []
+        - AdminToken: []
       requestBody:
         description: "User id, nfc data"
         content:
@@ -291,11 +293,12 @@ paths:
     post:
       tags:
         - events
-      summary: Favorites an event
-      description: Allows user to get notified.
-      operationId: favoriteEvent
+      summary: Follows an event
+      description: Allows user to get notified prior to the event.
+      operationId: followEvent
       security:
         - HackerToken: []
+        - AdminToken: []
       responses:
         204:
           description: successful operation
@@ -303,11 +306,12 @@ paths:
     post:
       tags:
         - events
-      summary: Unfavorites an event
-      description: Removes user from being notified
-      operationId: unfavoriteEvent
+      summary: Unfollow an event
+      description: Removes user from being notified about an event
+      operationId: unfollowEvent
       security:
         - HackerToken: []
+        - AdminToken: []
       responses:
         204:
           description: successful operation
@@ -332,7 +336,7 @@ paths:
                 items:
                   type: object
                   properties:
-                    event_id:
+                    eventId:
                       type: integer
                     count:
                       type: integer
@@ -340,11 +344,12 @@ paths:
     get:
       tags:
         - events
-      summary: List a user's favorited events
-      description: List of all events favorited by a user
-      operationId: listUserFavorites
+      summary: List a user's followed events
+      description: List the ids of each event the user follows
+      operationId: listUserFollows
       security:
         - HackerToken: []
+        - AdminToken: []
       responses:
         200:
           description: successful operation
@@ -353,7 +358,8 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Event"
+                  type: integer
+                uniqueItems: true
   /events/checkin:
     post:
       tags:
@@ -362,7 +368,7 @@ paths:
       description: Accepts a hacker's email, marks them as checked in, and returns their info
       operationId: eventCheckin
       security:
-        - ApiKeyAuth: []
+        - AdminToken: []
       requestBody:
         description: "Email or NFC"
         content:
@@ -373,7 +379,7 @@ paths:
                 email:
                   type: string
                   nullable: true
-                nfc_id:
+                nfcId:
                   type: string
                   nullable: true
       responses:
@@ -386,12 +392,15 @@ paths:
         400:
           description: Invalid body
           content: {}
-  /mentorship:
+  /question:
     get:
       tags:
-        - mentorship
-      description: List questions
-      summary: List questions
+        - questions
+      description: List all of a user's questions
+      summary: List all of a user's questions
+      security:
+        - HackerToken: []
+        - AdminToken: []
       responses:
         200:
           description: successful operation
@@ -401,34 +410,58 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Question"
-  /mentorship/submit:
+  /questions/submit:
     post:
       tags:
-        - mentorship
+        - questions
       description: Submit question
       summary: Submit question
+      security:
+        - HackerToken: []
+        - AdminToken: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BaseQuestion"
       responses:
         200:
           description: successful operation
           content:
             application/json:
               schema:
-                type: string
-  /mentorship/claim:
+                $ref: "#/components/schemas/Question"
+        400:
+          description: invalid credentials
+  /questions/delete:
+    delete:
+      tags:
+        - questions
+      description: Detelete a question (only the original asker can delete a question)
+      summary: Deletes a question
+      security:
+        - HackerToken: []
+        - AdminToken: []
+      parameters:
+        - in: "query"
+          name: questionId
+          schema:
+            type: integer
+      responses:
+        204:
+          description: The resource was deleted successfully.
+        400:
+          description: invalid credentials
     post:
       tags:
-        - mentorship
+        - questions
       description: Claim question
       summary: Claim question
       security:
-        - ApiKeyAuth: []
+        - AdminToken: []
       responses:
-        200:
+        204:
           description: successful operation
-          content:
-            application/json:
-              schema:
-                type: string
   /teams:
     get:
       tags:
@@ -446,40 +479,54 @@ paths:
                   type: object
                   properties:
                     color:
-                      type: string
+                      $ref: "#/components/schemas/Team"
                     points:
                       type: integer
 components:
   schemas:
+    Team:
+      type: string
+      enum:
+        - "red"
+        - "green"
+        - "blue"
     LoginBody:
       type: object
       properties:
         email:
           type: string
+          format: email
         password:
           type: string
+          format: password
     UserData:
       type: object
       properties:
         id:
           type: integer
-        first_name:
+        firstName:
           type: string
-        last_name:
+        lastName:
           type: string
         email:
           type: string
-        user_type:
+          format: email
+        userType:
           type: string
+          enum:
+            - attendee
+            - mentor
+            - organizer
+            - admin
         rsvp:
           type: string
-        check_in:
+        checkIn:
           type: string
         team:
-          type: string
-        food_restrictions:
+          $ref: "#/components/schemas/Team"
+        foodRestrictions:
           type: boolean
-        food_restrictions_info:
+        foodRestrictionsInfo:
           type: string
     Announcement:
       type: object
@@ -490,6 +537,9 @@ components:
           type: string
         body:
           type: string
+        timestamp:
+          type: string
+          format: date-time
     Event:
       type: object
       properties:
@@ -499,45 +549,61 @@ components:
           type: string
         description:
           type: string
-        location:
+        caption:
           type: string
-        start_time:
-          type: string
-        end_time:
-          type: string
-        host:
-          type: string
-        created_by:
-          type: string
-        created_at:
-          type: string
-        updated_at:
-          type: string
-        url:
-          type: string
-        tags:
+        categories:
           type: array
           items:
             type: string
-    Question:
-      type: object
-      properties:
-        id:
-          type: integer
-        question:
-          title: string
-        asker:
-          type: integer
+            enum:
+              - main
+              - food
+              - mini
+              - workshop
+              - sponsored
+          uniqueItems: true
         location:
           type: string
-        claimed:
-          type: boolean
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        pointVal:
+          type: string
+    BaseQuestion:
+      type: object
+      properties:
+        question:
+          type: string
+        slackUsername:
+          type: string
+        location:
+          type: string
+    Question:
+      allOf:
+        - $ref: "#/components/schemas/BaseQuestion"
+        - type: object
+          properties:
+            id:
+              type: integer
+            askerId:
+              type: integer
+            claimed:
+              type: boolean
+            claimerName:
+              type: string
+              nullable: true
+            timestamp:
+              type: string
+              format: datetime
   securitySchemes:
     HackerToken:
       type: apiKey
       in: header
       name: access-token
-    ApiKeyAuth:
+    AdminToken:
       type: apiKey
       in: header
-      name: X-API-KEY
+      name: access-token
