@@ -1,6 +1,9 @@
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
+import datetime
+from sqlalchemy import exc
+
 
 # import json
 # import hashlib
@@ -12,6 +15,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite3'
 
 db = SQLAlchemy(app)
+db.init_app(app)
 
 # Models
 
@@ -25,25 +29,32 @@ class User(db.Model):
 class Announcement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.Text, nullable=False)
-    text = db.Column(db.Text, nullable=True)
-    time = db.Column(db.Integer, nullable=False)
+    body = db.Column(db.Text, nullable=True)
+    timestamp = db.Column(db.Text, nullable=False)
+
+    @property
+    def serialize(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'body': self.body,
+            'timestamp': self.timestamp
+        }
 
 # Decorators
 
-# Checks for hacker login token
 
-
-def needs_client_auth(f):
+def needs_hacker_auth(f):
+    """Checks for valid hacker token. If user is admin-authed, will succeed"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         # TODO: actually do
         return f(*args, **kwargs)
     return decorated_function
 
-# Checks for admin api token
-
 
 def needs_admin_auth(f):
+    """Checks for valid admin token"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         # TODO: actually do
@@ -57,9 +68,10 @@ def needs_admin_auth(f):
 def root():
     return 'Api Root'
 
-# Login
+
 @app.route('/login', methods=['POST'])
 def login():
+    """Login for hacker app"""
     data = request.get_json()
     if ('email' not in data) or ('password' not in data):
         return "Invalid body", 400
@@ -74,6 +86,7 @@ def login():
 
 @app.route('/login/admin', methods=['POST'])
 def login_admin():
+    """Login for scanner app and admin dashboard"""
     data = request.get_json()
     if ('email' not in data) or ('password' not in data):
         return "Invalid body", 400
@@ -83,36 +96,82 @@ def login_admin():
 
 # Announce
 @app.route('/announce', methods=['GET'])
-def announce():
-    return jsonify([])
+def get_announce():
+    """Lists announcements"""
+    accouncements = Announcement.query.all()
+    res = [a.serialize() for a in accouncements]
+    return jsonify(res)
 
 
-@app.route('/announce', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@app.route('/announce', methods=['POST'])
 @needs_admin_auth
-def admin_announce():
-    if request.methid == "POST":
+def post_announce():
+    """Create an announcement"""
+    data = request.get_json()
+    if ('title' not in data) or ('body' not in data):
+        return "Invalid body", 400
+    dt = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+    try:
+        a = Announcement(data['title'], data['body'], dt)
+        db.session.add(a)
+        db.session.commit()
+    except exc.IntegrityError:
+        db.session.rollback()
+        return "Error creating announcement", 400
+    db.session.refresh(a)
+    # TODO: Push announcement via expo
+    return jsonify(a.serialize())
+
+
+@app.route('/announce', methods=['PUT', 'DELETE'])
+@needs_admin_auth
+def modify_announce():
+    """Update or delete announcement"""
+    if 'id' not in request.args:
+        return "Missing id", 400
+    a_id = request.args.get('id')
+
+    if request.methid == "PUT":
         data = request.get_json()
         if ('title' not in data) or ('body' not in data):
             return "Invalid body", 400
-    elif request.method == "PUT":
-        data = request.get_json()
-        if ('email' not in data) or ('password' not in data):
-            return "Invalid body", 400
-        if 'id' not in request.args:
-            return "Invalid params", 400
+        an = Announcement.query.filter_by(id=a_id).first()
+
+        if an is None:
+            return "not found", 404
+
+        an.title = data['title']
+        an.body = data['body']
+
+        try:
+            db.session.commit()
+        except exc.IntegrityError:
+            db.session.rollback()
+            return "Error creating announcement", 400
+        return jsonify(an.serialize())
     elif request.method == "DELETE":
-        if 'id' not in request.args:
-            return "Invalid params", 400
-    return jsonify([])
+        an = Announcement.query.filter_by(id=a_id).first()
+
+        if an is None:
+            return "not found", 404
+        try:
+            db.session.delete(an)
+            db.session.commit()
+        except exc.IntegrityError:
+            db.session.rollback()
+            return "Error deleting announcement", 400
+    return None, 204
 
 
 @app.route('/announce/subscribe', methods=['POST'])
-@needs_client_auth
+@needs_hacker_auth
 def announce_subscribe():
     data = request.get_json()
     if 'token' not in data:
         return "Invalid body", 400
-    return jsonify([])
+    # TODO: How to associate user and token?
+    # Idea: get email via authtoken, then assoc. expo token and email
+    return None, 204
 
 # Entry
 @app.route('/entry/checkin', methods=['POST'])
@@ -144,13 +203,13 @@ def get_events_hash():
 
 
 @app.route('/events/follow', methods=['POST'])
-@needs_client_auth
+@needs_hacker_auth
 def follow_event():
     return jsonify([])
 
 
 @app.route('/events/unfollow', methods=['POST'])
-@needs_client_auth
+@needs_hacker_auth
 def unfollow_event():
     return jsonify([])
 
@@ -161,29 +220,35 @@ def get_events_count():
 
 
 @app.route('/events/following')
-@needs_client_auth
+@needs_hacker_auth
 def get_events_following():
     return jsonify([])
 
 
 @app.route('/events/checkin', methods=['POST'])
-@needs_client_auth
+@needs_hacker_auth
 def event_checkin():
     return jsonify([])
 
-# Mentorship
-@app.route('/mentorship')
+
+@app.route('/questions')
 def get_questions():
     return jsonify([])
 
 
-@app.route('/mentorship/submit', methods=['POST'])
-@needs_client_auth
+@app.route('/questions/submit', methods=['POST'])
+@needs_hacker_auth
 def post_question():
     return jsonify([])
 
 
-@app.route('/mentorship/claim', methods=['POST'])
+@app.route('/questions/delete', methods=['DELETE'])
+@needs_hacker_auth
+def delete_question():
+    return jsonify([])
+
+
+@app.route('/questions/claim', methods=['POST'])
 def claim_question():
     return jsonify([])
 
