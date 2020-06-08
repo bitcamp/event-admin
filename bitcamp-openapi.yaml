@@ -104,7 +104,7 @@ paths:
       summary: Create an announcement
       operationId: createAnnounce
       security:
-        - ApiKeyAuth: []
+        - AdminToken: []
       requestBody:
         description: "Announcement"
         content:
@@ -132,7 +132,7 @@ paths:
       summary: Update an announcement
       operationId: updateAnnouncement
       security:
-        - ApiKeyAuth: []
+        - AdminToken: []
       parameters:
         - in: "query"
           name: id
@@ -165,7 +165,7 @@ paths:
       summary: Delete an announcement
       operationId: deleteAnnouncement
       security:
-        - ApiKeyAuth: []
+        - AdminToken: []
       parameters:
         - in: "query"
           name: id
@@ -186,6 +186,7 @@ paths:
       operationId: notifySubscribe
       security:
         - HackerToken: []
+        - AdminToken: []
       requestBody:
         description: "User credentials"
         content:
@@ -209,7 +210,7 @@ paths:
       description: Accepts a hacker's email, marks them as checked in, and returns their info
       operationId: entryCheckin
       security:
-        - ApiKeyAuth: []
+        - AdminToken: []
       requestBody:
         description: "Email"
         content:
@@ -238,7 +239,7 @@ paths:
       description: Associates a NFC id with a user
       operationId: entryPairing
       security:
-        - ApiKeyAuth: []
+        - AdminToken: []
       requestBody:
         description: "User id, nfc data"
         content:
@@ -297,6 +298,7 @@ paths:
       operationId: followEvent
       security:
         - HackerToken: []
+        - AdminToken: []
       responses:
         204:
           description: successful operation
@@ -309,6 +311,7 @@ paths:
       operationId: unfollowEvent
       security:
         - HackerToken: []
+        - AdminToken: []
       responses:
         204:
           description: successful operation
@@ -346,6 +349,7 @@ paths:
       operationId: listUserFollows
       security:
         - HackerToken: []
+        - AdminToken: []
       responses:
         200:
           description: successful operation
@@ -364,7 +368,7 @@ paths:
       description: Accepts a hacker's email, marks them as checked in, and returns their info
       operationId: eventCheckin
       security:
-        - ApiKeyAuth: []
+        - AdminToken: []
       requestBody:
         description: "Email or NFC"
         content:
@@ -396,6 +400,7 @@ paths:
       summary: List all of a user's questions
       security:
         - HackerToken: []
+        - AdminToken: []
       responses:
         200:
           description: successful operation
@@ -413,6 +418,7 @@ paths:
       summary: Submit question
       security:
         - HackerToken: []
+        - AdminToken: []
       requestBody:
         content:
           application/json:
@@ -435,6 +441,7 @@ paths:
       summary: Deletes a question
       security:
         - HackerToken: []
+        - AdminToken: []
       parameters:
         - in: "query"
           name: questionId
@@ -451,7 +458,7 @@ paths:
       description: Claim question
       summary: Claim question
       security:
-        - ApiKeyAuth: []
+        - AdminToken: []
       responses:
         204:
           description: successful operation
@@ -596,7 +603,7 @@ components:
       type: apiKey
       in: header
       name: access-token
-    ApiKeyAuth:
+    AdminToken:
       type: apiKey
       in: header
-      name: X-API-KEY
+      name: access-token
