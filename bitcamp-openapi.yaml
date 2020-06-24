@@ -275,20 +275,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Event"
-  /events/hash:
-    get:
-      tags:
-        - events
-      summary: Get hashed list of events
-      description: Hashed list of events, so app knows when to update
-      operationId: hashEvents
-      responses:
-        200:
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: string
   /events/follow:
     post:
       tags:
@@ -299,9 +285,16 @@ paths:
       security:
         - HackerToken: []
         - AdminToken: []
+      parameters:
+        - in: "query"
+          name: id
+          schema:
+            type: integer
       responses:
         204:
           description: successful operation
+        404:
+          description: event not found
   /events/unfollow:
     post:
       tags:
@@ -312,13 +305,16 @@ paths:
       security:
         - HackerToken: []
         - AdminToken: []
+      parameters:
+        - in: "query"
+          name: id
+          schema:
+            type: integer
       responses:
         204:
           description: successful operation
-          content:
-            application/json:
-              schema:
-                type: string
+        404:
+          description: event not found
   /events/following-count:
     get:
       tags:
@@ -392,7 +388,7 @@ paths:
         400:
           description: Invalid body
           content: {}
-  /question:
+  /questions:
     get:
       tags:
         - questions
@@ -452,6 +448,7 @@ paths:
           description: The resource was deleted successfully.
         400:
           description: invalid credentials
+  /questions/claim:
     post:
       tags:
         - questions
