@@ -82,6 +82,23 @@ paths:
         400:
           description: Invalid login
           content: {}
+  /login/validate-token:
+    get:
+      tags:
+        - login
+      summary: Validate a user's authentication token
+      description: Returns whether the user's auth token is valid
+      operationId: validateToken
+      security:
+        - HackerToken: []
+        - AdminToken: []
+      responses:
+        200:
+          description: The user has a valid token
+          content: {}
+        400:
+          description: Invalid token
+          content: {}
   /announce:
     get:
       tags:
